@@ -151,7 +151,7 @@ class SimulationModel(BaseModel):
         return key, distributions[key]
 
 
-    def generate_frailty(self, N, variance)
+    def generate_frailty(self, N, variance):
         '''
         Generate gamma frailty.
         '''
@@ -209,7 +209,7 @@ class SimulationModel(BaseModel):
             self.survival_distribution = 'Weibull Frailty'
             frailty = self.generate_frailty(num_samples, self.frailty_variance)
             self.frailty = frailty
-            return np.power( - np.log( np.power( U , 1./a ) )/( lambda_exp_BX ), 1./self.beta )
+            return np.power( - np.log( np.power( U , 1./self.frailty ) )/( lambda_exp_BX ), 1./self.beta )
 
     
     def hazard_function(self, t, BX):
