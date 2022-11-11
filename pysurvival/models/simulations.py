@@ -13,7 +13,8 @@ DISTRIBUTIONS = ['Exponential',
                  'Weibull',
                  'Gompertz',
                  'Log-Logistic',
-                 'Log-Normal',]    
+                 'Log-Normal',
+                 'Frailty']
 
 # List of risk types
 RISK_TYPES = ['Linear', 'Square',  'Gaussian']    
@@ -75,7 +76,7 @@ class SimulationModel(BaseModel):
 
     def __init__(self, survival_distribution = 'exponential',  
         risk_type = 'linear', censored_parameter = 1., alpha = 1, beta = 1.,
-        bins = 100, risk_parameter = 1.):
+        bins = 100, risk_parameter = 1., frailty_variance = False):
         
         # Saving the attributes
         self.censored_parameter = censored_parameter
@@ -102,6 +103,13 @@ class SimulationModel(BaseModel):
             error = "{} isn't a valid survival distribution. "
             error += "Only {} are currently available."
             error = error.format(survival_distribution,", ".join(DISTRIBUTIONS))
+            raise NotImplementedError(error)
+
+        # Checking frailty
+        if survival_distribution.lower() == "frailty" and frailty_variance:
+            self.frailty_variance   = frailty_variance
+        else:
+            error = "Specify frailty variance. "
             raise NotImplementedError(error)
         
         # Initializing the elements from BaseModel
@@ -141,6 +149,13 @@ class SimulationModel(BaseModel):
         random.shuffle(list_distributions)
         key = list_distributions[ index ]
         return key, distributions[key]
+
+
+    def generate_frailty(self, N, variance)
+        '''
+        Generate gamma frailty.
+        '''
+        return np.random.gamma(shape=1/variance, scale=variance, size=N)
 
 
     def time_function(self, BX):
@@ -188,6 +203,12 @@ class SimulationModel(BaseModel):
             self.survival_distribution = 'Log-Normal'
             W = np.random.normal(0, 1, num_samples)
             return  lambda_exp_BX*np.exp(self.beta*W)
+
+        # Frailty
+        elif self.survival_distribution.lower().startswith('frail') :
+            self.survival_distribution = 'Weibull Frailty'
+            a = self.generate_frailty(num_samples, self.frailty_variance)
+            return np.power( - np.log( np.power( U , 1./a ) )/( lambda_exp_BX ), 1./self.beta )
 
     
     def hazard_function(self, t, BX):
