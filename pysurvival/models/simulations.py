@@ -207,7 +207,8 @@ class SimulationModel(BaseModel):
         # Frailty
         elif self.survival_distribution.lower().startswith('frail') :
             self.survival_distribution = 'Weibull Frailty'
-            a = self.generate_frailty(num_samples, self.frailty_variance)
+            frailty = self.generate_frailty(num_samples, self.frailty_variance)
+            self.frailty = frailty
             return np.power( - np.log( np.power( U , 1./a ) )/( lambda_exp_BX ), 1./self.beta )
 
     
@@ -242,6 +243,10 @@ class SimulationModel(BaseModel):
             denominator =  1. - scipy.stats.norm.cdf(arg_normal)
             return numerator/denominator
 
+        # Frailty
+        elif self.survival_distribution.lower().startswith('frail'):
+            return  self.frailty*_lambda*self.beta*np.power( t, self.beta-1 )
+
     
     def survival_function(self, t, BX):
         """ 
@@ -272,6 +277,10 @@ class SimulationModel(BaseModel):
         elif self.survival_distribution.lower().endswith('normal'):
             arg_cdf = (np.log(t) - np.log(_lambda))/self.beta
             return 1. - scipy.stats.norm.cdf(arg_cdf)
+
+        # Frailty
+        elif self.survival_distribution.lower().startswith('frail'):
+            return np.exp( -np.power(t, self.beta)*_lambda*self.frailty )
 
 
     def risk_function(self, x_std):
